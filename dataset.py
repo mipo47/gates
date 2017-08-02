@@ -22,3 +22,9 @@ class DataSet:
     def to_numpy(self):
         self.inputs = np.array(self.inputs, copy=False)
         self.outputs = np.array(self.outputs, copy=False)
+
+    def get_batch(self, max_size):
+        length = self.length()
+        batch_length = np.minimum(max_size, length)
+        indices = np.random.choice(length, batch_length)
+        return self.inputs[indices,], self.outputs[indices,]
