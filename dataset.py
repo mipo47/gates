@@ -25,6 +25,8 @@ class DataSet:
 
     def get_batch(self, max_size):
         length = self.length()
-        batch_length = np.minimum(max_size, length)
-        indices = np.random.choice(length, batch_length)
+        if length <= max_size:
+            return self.inputs, self.outputs
+
+        indices = np.random.choice(length, max_size)
         return self.inputs[indices,], self.outputs[indices,]
