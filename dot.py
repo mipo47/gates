@@ -51,9 +51,9 @@ class Dot2(Gate, GateWeights):
     def backward(self, gValue, optimizer):
         prev_value = self.prev.value
 
+        prev_dValue = gValue.dot(self.w.T)
+
         self.gW = prev_value.T.dot(gValue)
         optimizer.update(self.w, self.gW)
-
-        prev_dValue = gValue.dot(self.w.T)
 
         self.prev.backward(prev_dValue, optimizer)
