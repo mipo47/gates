@@ -1,5 +1,7 @@
 import numpy as np
 
+DATASET_TYPE = np.float32
+
 
 class DataSet:
     def __init__(self):
@@ -20,8 +22,8 @@ class DataSet:
         return self.outputs.shape[1]
 
     def to_numpy(self):
-        self.inputs = np.array(self.inputs, copy=False)
-        self.outputs = np.array(self.outputs, copy=False)
+        self.inputs = np.array(self.inputs, copy=False, dtype=DATASET_TYPE)
+        self.outputs = np.array(self.outputs, copy=False, dtype=DATASET_TYPE)
 
     def get_batch(self, max_size):
         length = self.length()
