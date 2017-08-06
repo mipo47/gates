@@ -4,9 +4,9 @@ DATASET_TYPE = np.float32
 
 
 class DataSet:
-    def __init__(self):
-        self.inputs = []
-        self.outputs = []
+    def __init__(self, inputs = None, outputs = None):
+        self.inputs = [] if inputs is None else inputs
+        self.outputs = [] if outputs is None else outputs
 
     def add(self, input, output):
         self.inputs.append(input)

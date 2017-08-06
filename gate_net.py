@@ -7,3 +7,4 @@ from gates.simple import *
 from gates.layer import *
 from gates.losses import *
 from gates.checkpoint import *
+from gates.dataset import *
