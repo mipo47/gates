@@ -1,6 +1,7 @@
 import numpy as np
 from gates.gate import *
 
+
 class Sigmoid(Gate):
     def forward(self, value):
         prev_value = self.prev.forward(value)
@@ -20,7 +21,7 @@ class Tanh(Gate):
 
     def backward(self, gValue, optimizer):
         prev_value = self.prev.value
-        prev_gValue = gValue * (1.0 - np.tanh(prev_value)**2)
+        prev_gValue = gValue * (1.0 - np.tanh(prev_value) ** 2)
         self.prev.backward(prev_gValue, optimizer)
 
 
@@ -54,6 +55,7 @@ class Softmax(Gate):
         raise "Not implemented"
 
 
+# https://kratzert.github.io/2016/02/12/understanding-the-gradient-flow-through-the-batch-normalization-layer.html
 class BatchNorm(Gate, GateWeights):
     def __init__(self, prev):
         super().__init__(prev)
@@ -64,82 +66,66 @@ class BatchNorm(Gate, GateWeights):
         self.cache = None
 
     def forward(self, value):
-        prev_value = self.prev.forward(value)
-        self.value, self.cache = BatchNorm.batchnorm_forward(prev_value, self.w[0], self.w[1], self.eps)
+        x = self.prev.forward(value)
+
+        # step1: calculate mean
+        mu = np.mean(x, axis=0)
+
+        # step2: subtract mean vector of every trainings example
+        self.xmu = x - mu
+
+        # step3: following the lower branch - calculation denominator
+        sq = self.xmu ** 2
+
+        # step4: calculate variance
+        self.var = np.mean(sq, axis=0)
+
+        # step5: add eps for numerical stability, then sqrt
+        self.sqrtvar = np.sqrt(self.var + self.eps)
+
+        # step6: invert sqrtwar
+        self.ivar = 1. / self.sqrtvar
+
+        # step7: execute normalization
+        xhat = self.xmu * self.ivar
+
+        # step8: Nor the two transformation steps
+        gammax = self.w[0] * xhat
+
+        # step9
+        self.value = gammax + self.w[1]
+
         return self.value
 
     def backward(self, gValue, optimizer):
-        prev_gValue, dgamma, dbeta = BatchNorm.batchnorm_backward(gValue, self.cache)
-        self.gW = np.array([np.sum(dgamma), np.sum(dbeta)])
-        optimizer.update(self.w, self.gW)
-        self.prev.backward(prev_gValue, optimizer)
+        N, D = gValue.shape
 
-    # Implementation from https://kratzert.github.io/2016/02/12/understanding-the-gradient-flow-through-the-batch-normalization-layer.html
-    def batchnorm_forward(x, gamma, beta, eps):
-        N, D = x.shape
-
-        # step1: calculate mean
-        mu = 1. / N * np.sum(x, axis=0)
-
-        # step2: subtract mean vector of every trainings example
-        xmu = x - mu
-
-        # step3: following the lower branch - calculation denominator
-        sq = xmu ** 2
-
-        # step4: calculate variance
-        var = 1. / N * np.sum(sq, axis=0)
-
-        # step5: add eps for numerical stability, then sqrt
-        sqrtvar = np.sqrt(var + eps)
-
-        # step6: invert sqrtwar
-        ivar = 1. / sqrtvar
-
-        # step7: execute normalization
-        xhat = xmu * ivar
-
-        # step8: Nor the two transformation steps
-        gammax = gamma * xhat
+        # calculate instead of storing because it's too big
+        xhat = self.xmu * self.ivar
 
         # step9
-        out = gammax + beta
-
-        # store intermediate
-        cache = (xhat, gamma, xmu, ivar, sqrtvar, var, eps)
-
-        return out, cache
-
-    def batchnorm_backward(dout, cache):
-        # unfold the variables stored in cache
-        xhat, gamma, xmu, ivar, sqrtvar, var, eps = cache
-
-        # get the dimensions of the input/output
-        N, D = dout.shape
-
-        # step9
-        dbeta = np.sum(dout, axis=0)
-        dgammax = dout  # not necessary, but more understandable
+        dbeta = np.sum(gValue, axis=0)
+        dgammax = gValue  # not necessary, but more understandable
 
         # step8
         dgamma = np.sum(dgammax * xhat, axis=0)
-        dxhat = dgammax * gamma
+        dxhat = dgammax * self.w[0]
 
         # step7
-        divar = np.sum(dxhat * xmu, axis=0)
-        dxmu1 = dxhat * ivar
+        divar = np.sum(dxhat * self.xmu, axis=0)
+        dxmu1 = dxhat * self.ivar
 
         # step6
-        dsqrtvar = -1. / (sqrtvar ** 2) * divar
+        dsqrtvar = -1. / (self.sqrtvar ** 2) * divar
 
         # step5
-        dvar = 0.5 * 1. / np.sqrt(var + eps) * dsqrtvar
+        dvar = 0.5 * 1. / np.sqrt(self.var + self.eps) * dsqrtvar
 
         # step4
         dsq = 1. / N * np.ones((N, D)) * dvar
 
         # step3
-        dxmu2 = 2 * xmu * dsq
+        dxmu2 = 2 * self.xmu * dsq
 
         # step2
         dx1 = (dxmu1 + dxmu2)
@@ -149,6 +135,10 @@ class BatchNorm(Gate, GateWeights):
         dx2 = 1. / N * np.ones((N, D)) * dmu
 
         # step0
-        dx = dx1 + dx2
+        prev_gValue = dx1 + dx2
 
-        return dx, dgamma, dbeta
+        # update gamma and beta
+        self.gW = np.array([np.sum(dgamma), np.sum(dbeta)])
+        optimizer.update(self.w, self.gW)
+
+        self.prev.backward(prev_gValue, optimizer)
