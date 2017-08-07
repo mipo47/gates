@@ -1,5 +1,6 @@
 from gates.gate_net import *
-
+# from gates.tf_to_gates import *
+# import numpy as np
 
 def get_accuracy(net, dataset, is_one_hot):
     # validation accuracy

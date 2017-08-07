@@ -8,3 +8,4 @@ from gates.layer import *
 from gates.losses import *
 from gates.checkpoint import *
 from gates.dataset import *
+from gates.data_info import *
