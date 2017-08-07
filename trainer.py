@@ -5,7 +5,11 @@ from gates.gate_net import *
 def get_accuracy(net, dataset, is_one_hot):
     # validation accuracy
     softmax = Softmax(net)
+
+    Dropout.Enable = False
     values = softmax.forward(dataset.inputs)
+    Dropout.Enable = True
+
     predicted = np.argmax(values, axis=1)
     outputs = np.argmax(dataset.outputs, axis=1) if is_one_hot else dataset.outputs
     correct = np.sum(outputs == predicted)
@@ -35,6 +39,8 @@ def train_model(data_info,
         net = l = Layer(net, layer_size, activation)
         if 'dropout' in data_info:
             net = Dropout(net, data_info.dropout)
+        if 'dropout2' in data_info:
+            net = Dropout2(net, data_info.dropout2)
 
     # last/output layer
     output_count = data_info.output_count if 'output_count' in data_info else train.output_count()

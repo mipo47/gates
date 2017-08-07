@@ -156,8 +156,7 @@ class Dropout(Gate):
     def forward(self, value):
         prev_value = self.prev.forward(value)
         if Dropout.Enable:
-            mult = np.random.binomial(1, self.probability, size=prev_value.shape) \
-                   * (1.0 / self.probability)
+            mult = np.random.binomial(1, self.probability, size=prev_value.shape) / self.probability
         else:
             mult = 1.0
 
@@ -170,10 +169,9 @@ class Dropout2(Dropout):
     def forward(self, value):
         prev_value = self.prev.forward(value)
         if Dropout.Enable:
-            self.mult = np.random.binomial(1, self.probability, size=prev_value.shape) \
-                   * (1.0 / self.probability)
+            self.mult = np.random.binomial(1, self.probability, size=prev_value.shape) / self.probability
         else:
-            self.mult = 1.0
+            self.mult = self.probability
 
         self.value = prev_value * self.mult
         return self.value
