@@ -142,3 +142,42 @@ class BatchNorm(Gate, GateWeights):
         optimizer.update(self.w, self.gW)
 
         self.prev.backward(prev_gValue, optimizer)
+
+
+class Dropout(Gate):
+    Enable = True
+
+    def __init__(self, prev, dropout=0.2):
+        super().__init__(prev)
+
+        # pass forward probability, 1.0 means no drop out
+        self.probability = 1.0 - dropout
+
+    def forward(self, value):
+        prev_value = self.prev.forward(value)
+        if Dropout.Enable:
+            mult = np.random.binomial(1, self.probability, size=prev_value.shape) \
+                   * (1.0 / self.probability)
+        else:
+            mult = 1.0
+
+        self.value = prev_value * mult
+        return self.value
+
+
+# not sure if it works with backprop
+class Dropout2(Dropout):
+    def forward(self, value):
+        prev_value = self.prev.forward(value)
+        if Dropout.Enable:
+            self.mult = np.random.binomial(1, self.probability, size=prev_value.shape) \
+                   * (1.0 / self.probability)
+        else:
+            self.mult = 1.0
+
+        self.value = prev_value * self.mult
+        return self.value
+
+    def backward(self, gValue, optimizer):
+        prev_gValue = gValue * self.mult
+        self.prev.backward(prev_gValue, optimizer)

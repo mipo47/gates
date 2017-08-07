@@ -33,6 +33,8 @@ def train_model(data_info,
     # hidden layers
     for layer_size in data_info.layers:
         net = l = Layer(net, layer_size, activation)
+        if 'dropout' in data_info:
+            net = Dropout(net, data_info.dropout)
 
     # last/output layer
     output_count = data_info.output_count if 'output_count' in data_info else train.output_count()

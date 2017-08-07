@@ -1,6 +1,6 @@
 from gates.gate import *
 from gates.simple import *
-
+from gates.activations import Dropout
 
 class Loss(Gate):
     def __init__(self, prev, expected = 0.0):
@@ -21,7 +21,11 @@ class Loss(Gate):
     def validate(self, inputs, outputs):
         # current_expected = self.expected
         self.set_expected(outputs)
+
+        Dropout.Enable = False
         self.forward(inputs)
+        Dropout.Enable = True
+
         # self.set_expected(current_expected) # restore original value
         return self.value # will be set in forward
 
