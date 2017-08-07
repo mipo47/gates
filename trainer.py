@@ -12,8 +12,14 @@ def get_accuracy(net, dataset, is_one_hot):
 
 
 # TODO: try weight regularization, cross validation, dropout
-def train_model(data_info, train, validation, test, explore_steps=1000, validate_steps=10, show_progress=0.99, display_L2_loss=False):
-    is_classification = data_info['loss'] == SoftmaxLoss
+def train_model(data_info,
+                train, validation, test,
+                explore_steps=1000,
+                validate_steps=10,
+                show_progress=0.99,
+                display_L2_loss=False):
+
+    is_classification = data_info.loss == SoftmaxLoss
 
     # ------- START CREATE NETWORK ---------------------------------
 
@@ -21,27 +27,27 @@ def train_model(data_info, train, validation, test, explore_steps=1000, validate
     net = Gate(size=train.input_count())
 
     # default activation function for hidden layers
-    activation = data_info['activation'] if 'activation' in data_info else Tanh
+    activation = data_info.activation if 'activation' in data_info else Tanh
 
     # hidden layers
-    for layer_size in data_info['layers']:
+    for layer_size in data_info.layers:
         net = l = Layer(net, layer_size, activation)
 
     # last/output layer
-    output_count = data_info['output_count'] if 'output_count' in data_info else train.output_count()
+    output_count = data_info.output_count if 'output_count' in data_info else train.output_count()
     net = Layer(net, output_count,
                 None if is_classification else Sigmoid)  # no activation is needed for classification
 
     # ------- END CREATE NETWORK ------------------------------------
 
     # choose loss function to measure network efficiency
-    loss = data_info['loss'](net)
+    loss = data_info.loss(net)
     if 'output_count' in data_info:
         loss.is_one_hot = False
 
     # always display L2 loss score, even for softmax classification
     display_loss = loss \
-        if data_info['loss'] == LossL2 or not display_L2_loss \
+        if data_info.loss == LossL2 or not display_L2_loss \
         else LossL2(Softmax(net))
 
     # save weights of best scored network here
@@ -49,13 +55,13 @@ def train_model(data_info, train, validation, test, explore_steps=1000, validate
 
     # select learning optimization algorithm
     optimizer = \
-        data_info['optimizer'](data_info['learning_rate']) \
+        data_info.optimizer(data_info.learning_rate) \
             if 'optimizer' in data_info \
             else Adam()
 
     shown_loss = backup_loss = valid_loss = 9999999
     shown_step = step = 0
-    batch_size = data_info["batch_size"] if "batch_size" in data_info else 1024
+    batch_size = data_info.batch_size if "batch_size" in data_info else 1024
     while True:
         # train in mini batches
         inputs, outputs = train.get_batch(batch_size)
