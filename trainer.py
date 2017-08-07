@@ -60,6 +60,9 @@ def train_model(data_info,
             if 'optimizer' in data_info \
             else Adam()
 
+    # doesn't give me good results yet
+    # optimizer = Regularizer(optimizer, 0.001)
+
     shown_loss = backup_loss = valid_loss = 9999999
     shown_step = step = 0
     batch_size = data_info.batch_size if "batch_size" in data_info else 1024
@@ -117,4 +120,5 @@ def train_model(data_info,
         accuracy = get_accuracy(net, test, loss.is_one_hot)
         print("test accuracy", accuracy)
 
+    # print_weights(net)
     return checkpoint

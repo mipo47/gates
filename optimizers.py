@@ -66,13 +66,3 @@ class Adam:
         m2 /= 1.0 - self.b1
 
         w -= self.learning_rate * m1 / (np.sqrt(m2) + self.e)
-
-
-class L1:
-    def __init__(self, optimizer, regularization):
-        self.optimizer = optimizer
-        self.regularization = regularization
-
-    def update(self, w, gW):
-        self.optimizer.update(w, gW)
-        w -= w * self.regularization
