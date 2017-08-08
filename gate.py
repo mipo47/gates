@@ -38,3 +38,12 @@ class DataGate(Gate):
 
     def backward(self, gValue, optimizer):
         optimizer.update(self.value, gValue)
+
+
+class GateW(Gate, GateWeights):
+    def forward(self, value):
+        self.w = self.value = value
+        return value
+
+    def backward(self, gValue, optimizer):
+        self.gW = gValue
