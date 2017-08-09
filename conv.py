@@ -44,13 +44,16 @@ class Flatten(Gate):
 class Conv(Gate):
     def __init__(self, prev, in_shape, out_channels=10, filter_size=(3, 3)):
         super().__init__(prev)
+        self.in_shape = in_shape
         self.filter_count = out_channels
         self.filter_size = filter_size
 
-        self.in_shape = in_shape
-        self.output_shape = (out_channels,
-                             in_shape[1] - self.filter_size[0] + 1,
-                             in_shape[2] - self.filter_size[1] + 1)
+        padding = 0
+        stride = 1
+
+        out_h = int((in_shape[1] - filter_size[0] + 2 * padding) / stride + 1)
+        out_w = int((in_shape[2] - filter_size[1] + 2 * padding) / stride + 1)
+        self.output_shape = (out_channels, out_h, out_w)
 
         self.size = self.output_shape[0] * self.output_shape[1] * self.output_shape[2]
 
@@ -71,16 +74,16 @@ class Conv(Gate):
         self.value = np.zeros((batch_size,) + self.output_shape)
         # self.value = bhwc[:, 1:-1, 1:-1, :]
 
-        for h in range(self.output_shape[1]):
-            for w in range(self.output_shape[2]):
-                in_view = bchw[
-                          :, :,
-                          h: h + self.filter_size[0],
-                          w: w + self.filter_size[1]]
+        for b in range(batch_size):
+            for h in range(self.output_shape[1]):
+                for w in range(self.output_shape[2]):
+                    in_view = bchw[
+                              b, :,
+                              h: h + self.filter_size[0],
+                              w: w + self.filter_size[1]]
 
-                for out_c in range(self.output_shape[0]):
                     # calculate filter applied matrix
-                    matrix = in_view * self.filters[out_c]
+                    matrix = in_view * self.filters
                     out = np.sum(matrix, axis=(1, 2, 3))
                     # if np.sum(out) > 0:
                     #     print(h, w, in_c, out_c)
@@ -89,11 +92,20 @@ class Conv(Gate):
                     #          h:h + self.filter_size[0],
                     #          w:w + self.filter_size[1],
                     #          in_c])
-
-                    self.value[:, out_c, h, w] += out
+                    self.value[b, :, h, w] += out
 
         return self.value
 
     def backward(self, gValue, optimizer):
-        prev_gValue = np.zeros((gValue.shape[0],) + self.in_shape)
+        batch_size = gValue.shape[0]
+        prev_gValue = np.zeros((batch_size,) + self.in_shape)
+
+        # for b in range(batch_size):
+        #     for h in range(self.in_shape[1]):
+        #         for w in range(self.in_shape[2]):
+        #             out_h = h
+        #             out = gValue[b, :, h, w] * self.filters
+        #
+        #             prev_gValue[b, :, h, w] += out
+
         self.prev.backward(prev_gValue, optimizer)
