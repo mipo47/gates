@@ -66,10 +66,8 @@ class Conv(Gate, GateWeights):
         # self.w[0, 0, 1, 1] = 1
         # self.w[1, 1, 0, 0] = 1
         # self.w[1, 2, 0, 0] = -1
-
         self.w = np.round((np.random.random(self.filter_shape) - 0.5) * 4)
-
-        # print(self.filters)
+        # print(self.w)
         # print("---------------------------")
 
     def forward(self, value):
@@ -79,17 +77,17 @@ class Conv(Gate, GateWeights):
 
         batch_size = bchw.shape[0]
         self.value = np.zeros((batch_size,) + self.output_shape)
-        # self.value = bhwc[:, 1:-1, 1:-1, :]
 
-        for b in range(batch_size):
-            for h in range(self.output_shape[1]):
-                for w in range(self.output_shape[2]):
-                    in_view = bchw[
-                              b, :,
-                              h: h + self.filter_size[0],
-                              w: w + self.filter_size[1]]
-                    out = np.sum(in_view * self.w, axis=(1, 2, 3))
-                    self.value[b, :, h, w] += out
+        for h in range(self.output_shape[1]):
+            for w in range(self.output_shape[2]):
+                in_view = bchw[
+                          :, :,
+                          h: h + self.filter_size[0],
+                          w: w + self.filter_size[1]
+                          ].reshape((batch_size, 1) + self.filter_shape[1:])
+
+                out = np.sum(in_view * self.w, axis=(2, 3, 4))
+                self.value[:, :, h, w] += out
 
         return self.value
 
@@ -97,14 +95,14 @@ class Conv(Gate, GateWeights):
         batch_size = gValue.shape[0]
         prev_gValue = np.zeros((batch_size,) + self.in_shape)
 
-        for b in range(batch_size):
-            for h in range(self.output_shape[1]):
-                for w in range(self.output_shape[2]):
-                    pixel = gValue[b, :, h, w].reshape((-1, 1, 1, 1))
-                    out = np.sum(pixel * self.w, axis=0)
-                    prev_gValue[
-                        b, :,
-                        h: h + self.filter_size[0],
-                        w: w + self.filter_size[1]] += out
+        # for b in range(batch_size):
+        for h in range(self.output_shape[1]):
+            for w in range(self.output_shape[2]):
+                pixel = gValue[:, :, h, w].reshape((batch_size, -1, 1, 1, 1))
+                out = np.sum(pixel * self.w, axis=1)
+                prev_gValue[
+                :, :,
+                h: h + self.filter_size[0],
+                w: w + self.filter_size[1]] += out
 
         self.prev.backward(prev_gValue, optimizer)
