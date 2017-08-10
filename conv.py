@@ -41,12 +41,18 @@ class Flatten(Gate):
         self.prev.backward(prev_gValue, optimizer)
 
 
+class MaxPool(Gate):
+    def forward(self, value):
+
+
+
 class Conv(Gate, GateWeights):
-    def __init__(self, prev, in_shape, out_channels=10, filter_size=(3, 3)):
+    def __init__(self, prev, in_shape, out_channels=10, filter_size=(3, 3), learning_rate = 0.001):
         super().__init__(prev)
         self.in_shape = in_shape
         self.out_channels = out_channels
         self.filter_size = filter_size
+        self.learning_rate = learning_rate
 
         padding = 0
         stride = 1
@@ -62,7 +68,8 @@ class Conv(Gate, GateWeights):
 
         # filters
         self.filter_shape = (out_channels, in_channels, filter_height, filter_width)
-        self.w = np.round((np.random.random(self.filter_shape) - 0.5) * 4)
+        # self.w = np.round((np.random.random(self.filter_shape) - 0.5) * 4)
+        self.w = np.random.randn(*self.filter_shape) / np.sqrt(out_channels * 0.5)
         # self.w = np.zeros([out_channels, in_channels, filter_height, filter_width])
         # self.w[0, 0, 1, 1] = 1
         # self.w[1, 1, 0, 0] = 1
@@ -117,5 +124,5 @@ class Conv(Gate, GateWeights):
 
                 self.gW += np.sum(in_view * pixel, axis=0)
 
-        optimizer.update(self.w, self.gW)
+        optimizer.update(self.w, self.gW * self.learning_rate)
         self.prev.backward(prev_gValue, optimizer)
