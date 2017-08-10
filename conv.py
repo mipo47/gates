@@ -86,17 +86,7 @@ class Conv(Gate):
                               b, :,
                               h: h + self.filter_size[0],
                               w: w + self.filter_size[1]]
-
-                    # calculate filter applied matrix
-                    matrix = in_view * self.filters
-                    out = np.sum(matrix, axis=(1, 2, 3))
-                    # if np.sum(out) > 0:
-                    #     print(h, w, in_c, out_c)
-                    #     print(bhwc[
-                    #          0,
-                    #          h:h + self.filter_size[0],
-                    #          w:w + self.filter_size[1],
-                    #          in_c])
+                    out = np.sum(in_view * self.filters, axis=(1, 2, 3))
                     self.value[b, :, h, w] += out
 
         return self.value
@@ -108,13 +98,11 @@ class Conv(Gate):
         for b in range(batch_size):
             for h in range(self.output_shape[1]):
                 for w in range(self.output_shape[2]):
-                    for out_c in range(self.out_channels):
-                        pixel = gValue[b, out_c, h, w]
-                        out = pixel * self.filters[out_c]
-
-                        prev_gValue[
-                            b, :,
-                            h: h + self.filter_size[0],
-                            w: w + self.filter_size[1]] += out
+                    pixel = gValue[b, :, h, w].reshape((-1, 1, 1, 1))
+                    out = np.sum(pixel * self.filters, axis=0)
+                    prev_gValue[
+                        b, :,
+                        h: h + self.filter_size[0],
+                        w: w + self.filter_size[1]] += out
 
         self.prev.backward(prev_gValue, optimizer)
