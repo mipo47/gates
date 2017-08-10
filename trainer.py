@@ -102,12 +102,16 @@ def train_model(data_info,
                 break
 
         # show losses if our score improved more than 1%
-        if step == 0 or sum_loss < shown_loss * show_progress:
+        is_better = sum_loss < shown_loss * show_progress
+        if is_better:
             if is_classification:
                 accuracy = get_accuracy(net, validation, loss.is_one_hot)
                 print(step + 1, "train/validation/accuracy", train_loss, valid_loss, accuracy)
             else:
                 print(step + 1, "train/validation loss", train_loss, valid_loss)
+
+            if 'summary' in data_info:
+                data_info.summary()
 
             shown_step = step
             shown_loss = sum_loss
