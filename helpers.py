@@ -41,14 +41,20 @@ def checkGradient(gateWeights, loss, X, optimizer):
     j = None
     if temp_w.ndim == 1:
         grad = gateWeights.gW[i]
-    else:  # 2 dimensions
+        gateWeights.w[i] += d
+    elif temp_w.ndim == 2:
         j = np.random.randint(temp_w.shape[1])
         grad = gateWeights.gW[i, j]
-
-    if temp_w.ndim == 1:
-        gateWeights.w[i] += d
-    else: # 2 dimensions
         gateWeights.w[i, j] += d
+    elif temp_w.ndim == 4: # convolutional filters
+        i1 = np.random.randint(temp_w.shape[1])
+        i2 = np.random.randint(temp_w.shape[2])
+        i3 = np.random.randint(temp_w.shape[3])
+        grad = gateWeights.gW[i, i1, i2, i3]
+        gateWeights.w[i, i1, i2, i3] += d
+    else:
+        raise "dimensions are not supported"
+
     newLoss = loss.forward(X)
 
     realGrad = (newLoss - oldLoss) / d
