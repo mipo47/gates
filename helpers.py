@@ -38,7 +38,6 @@ def checkGradient(gateWeights, loss, X, optimizer):
 
     d = 0.00001
     i = np.random.randint(temp_w.shape[0])
-    j = None
     if temp_w.ndim == 1:
         grad = gateWeights.gW[i]
         gateWeights.w[i] += d
