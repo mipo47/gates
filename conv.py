@@ -41,7 +41,7 @@ class Flatten(Gate):
         self.prev.backward(prev_gValue, optimizer)
 
 
-class Conv(Gate):
+class Conv(Gate, GateWeights):
     def __init__(self, prev, in_shape, out_channels=10, filter_size=(3, 3)):
         super().__init__(prev)
         self.in_shape = in_shape
@@ -60,12 +60,14 @@ class Conv(Gate):
         filter_height, filter_width = filter_size
         in_channels = in_shape[0]
 
-        # self.filters = np.zeros([out_channels, in_channels, filter_height, filter_width])
-        # self.filters[0, 0, 1, 1] = 1
-        # self.filters[1, 1, 0, 0] = 1
-        # self.filters[1, 2, 0, 0] = -1
+        # filters
+        self.filter_shape = (out_channels, in_channels, filter_height, filter_width)
+        # self.w = np.zeros([out_channels, in_channels, filter_height, filter_width])
+        # self.w[0, 0, 1, 1] = 1
+        # self.w[1, 1, 0, 0] = 1
+        # self.w[1, 2, 0, 0] = -1
 
-        self.filters = np.round((np.random.random([out_channels, in_channels, filter_height, filter_width]) - 0.5) * 4)
+        self.w = np.round((np.random.random(self.filter_shape) - 0.5) * 4)
 
         # print(self.filters)
         # print("---------------------------")
@@ -86,7 +88,7 @@ class Conv(Gate):
                               b, :,
                               h: h + self.filter_size[0],
                               w: w + self.filter_size[1]]
-                    out = np.sum(in_view * self.filters, axis=(1, 2, 3))
+                    out = np.sum(in_view * self.w, axis=(1, 2, 3))
                     self.value[b, :, h, w] += out
 
         return self.value
@@ -99,7 +101,7 @@ class Conv(Gate):
             for h in range(self.output_shape[1]):
                 for w in range(self.output_shape[2]):
                     pixel = gValue[b, :, h, w].reshape((-1, 1, 1, 1))
-                    out = np.sum(pixel * self.filters, axis=0)
+                    out = np.sum(pixel * self.w, axis=0)
                     prev_gValue[
                         b, :,
                         h: h + self.filter_size[0],
