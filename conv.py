@@ -45,7 +45,7 @@ class Conv(Gate):
     def __init__(self, prev, in_shape, out_channels=10, filter_size=(3, 3)):
         super().__init__(prev)
         self.in_shape = in_shape
-        self.filter_count = out_channels
+        self.out_channels = out_channels
         self.filter_size = filter_size
 
         padding = 0
@@ -59,11 +59,16 @@ class Conv(Gate):
 
         filter_height, filter_width = filter_size
         in_channels = in_shape[0]
-        self.filters = np.zeros([out_channels, in_channels, filter_height, filter_width])
 
-        self.filters[0, 0, 1, 1] = 1
-        self.filters[1, 1, 0, 0] = 1
-        self.filters[1, 2, 0, 0] = -1
+        # self.filters = np.zeros([out_channels, in_channels, filter_height, filter_width])
+        # self.filters[0, 0, 1, 1] = 1
+        # self.filters[1, 1, 0, 0] = 1
+        # self.filters[1, 2, 0, 0] = -1
+
+        self.filters = np.round((np.random.random([out_channels, in_channels, filter_height, filter_width]) - 0.5) * 4)
+
+        # print(self.filters)
+        # print("---------------------------")
 
     def forward(self, value):
         bchw = self.prev.forward(value)
@@ -100,12 +105,16 @@ class Conv(Gate):
         batch_size = gValue.shape[0]
         prev_gValue = np.zeros((batch_size,) + self.in_shape)
 
-        # for b in range(batch_size):
-        #     for h in range(self.in_shape[1]):
-        #         for w in range(self.in_shape[2]):
-        #             out_h = h
-        #             out = gValue[b, :, h, w] * self.filters
-        #
-        #             prev_gValue[b, :, h, w] += out
+        for b in range(batch_size):
+            for h in range(self.output_shape[1]):
+                for w in range(self.output_shape[2]):
+                    for out_c in range(self.out_channels):
+                        pixel = gValue[b, out_c, h, w]
+                        out = pixel * self.filters[out_c]
+
+                        prev_gValue[
+                            b, :,
+                            h: h + self.filter_size[0],
+                            w: w + self.filter_size[1]] += out
 
         self.prev.backward(prev_gValue, optimizer)
