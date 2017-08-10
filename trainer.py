@@ -26,28 +26,27 @@ def train_model(data_info,
 
     is_classification = data_info.loss == SoftmaxLoss
 
-    # ------- START CREATE NETWORK ---------------------------------
+    if 'net' in data_info:
+        net = data_info.net
+    else: # create gate network
+        # input layer
+        net = Gate(size=train.input_count())
 
-    # input layer
-    net = Gate(size=train.input_count())
+        # default activation function for hidden layers
+        activation = data_info.activation if 'activation' in data_info else Tanh
 
-    # default activation function for hidden layers
-    activation = data_info.activation if 'activation' in data_info else Tanh
+        # hidden layers
+        for layer_size in data_info.layers:
+            net = l = Layer(net, layer_size, activation)
+            if 'dropout' in data_info:
+                net = Dropout(net, data_info.dropout)
+            if 'dropout2' in data_info:
+                net = Dropout2(net, data_info.dropout2)
 
-    # hidden layers
-    for layer_size in data_info.layers:
-        net = l = Layer(net, layer_size, activation)
-        if 'dropout' in data_info:
-            net = Dropout(net, data_info.dropout)
-        if 'dropout2' in data_info:
-            net = Dropout2(net, data_info.dropout2)
-
-    # last/output layer
-    output_count = data_info.output_count if 'output_count' in data_info else train.output_count()
-    net = Layer(net, output_count,
-                None if is_classification else Sigmoid)  # no activation is needed for classification
-
-    # ------- END CREATE NETWORK ------------------------------------
+        # last/output layer
+        output_count = data_info.output_count if 'output_count' in data_info else train.output_count()
+        net = Layer(net, output_count,
+                    None if is_classification else Sigmoid)  # no activation is needed for classification
 
     # choose loss function to measure network efficiency
     loss = data_info.loss(net)
