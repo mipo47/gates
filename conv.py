@@ -62,11 +62,11 @@ class Conv(Gate, GateWeights):
 
         # filters
         self.filter_shape = (out_channels, in_channels, filter_height, filter_width)
+        self.w = np.round((np.random.random(self.filter_shape) - 0.5) * 4)
         # self.w = np.zeros([out_channels, in_channels, filter_height, filter_width])
         # self.w[0, 0, 1, 1] = 1
         # self.w[1, 1, 0, 0] = 1
         # self.w[1, 2, 0, 0] = -1
-        self.w = np.round((np.random.random(self.filter_shape) - 0.5) * 4)
         # print(self.w)
         # print("---------------------------")
 
@@ -95,9 +95,12 @@ class Conv(Gate, GateWeights):
         batch_size = gValue.shape[0]
         prev_gValue = np.zeros((batch_size,) + self.in_shape)
 
-        # for b in range(batch_size):
+        bchw = self.prev.value
+        self.gW = np.zeros_like(self.w)
+
         for h in range(self.output_shape[1]):
             for w in range(self.output_shape[2]):
+                # previous layer gradient
                 pixel = gValue[:, :, h, w].reshape((batch_size, -1, 1, 1, 1))
                 out = np.sum(pixel * self.w, axis=1)
                 prev_gValue[
@@ -105,4 +108,14 @@ class Conv(Gate, GateWeights):
                 h: h + self.filter_size[0],
                 w: w + self.filter_size[1]] += out
 
+                # filters gradient
+                in_view = bchw[
+                          :, :,
+                          h: h + self.filter_size[0],
+                          w: w + self.filter_size[1]
+                          ].reshape((batch_size, 1) + self.filter_shape[1:])
+
+                self.gW += np.sum(in_view * pixel, axis=0)
+
+        optimizer.update(self.w, self.gW)
         self.prev.backward(prev_gValue, optimizer)
