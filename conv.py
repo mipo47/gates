@@ -41,11 +41,6 @@ class Flatten(Gate):
         self.prev.backward(prev_gValue, optimizer)
 
 
-class MaxPool(Gate):
-    def forward(self, value):
-
-
-
 class Conv(Gate, GateWeights):
     def __init__(self, prev, in_shape, out_channels=10, filter_size=(3, 3), learning_rate = 0.001):
         super().__init__(prev)
