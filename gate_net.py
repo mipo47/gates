@@ -10,4 +10,5 @@ from gates.losses import *
 from gates.checkpoint import *
 from gates.dataset import *
 from gates.data_info import *
+from gates.transform import *
 from gates.conv import *
