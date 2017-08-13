@@ -40,3 +40,22 @@ class Flatten(Gate):
         prev_gValue = gValue.reshape((-1,) + self.input_shape)
         self.prev.backward(prev_gValue, optimizer)
 
+
+class Transpose(Gate):
+    def __init__(self, prev, order):
+        super().__init__(prev)
+        self.order = order
+
+        self.order_inverse = np.zeros((len(order)), dtype=np.int32)
+        for i, v in enumerate(order):
+            self.order_inverse[v] = i
+
+    def forward(self, value):
+        prev_value = self.prev.forward(value)
+        self.value = np.transpose(prev_value, self.order)
+        # print("forward", prev_value.shape, self.value.shape)
+        return self.value
+
+    def backward(self, gValue, optimizer):
+        prev_gValue = np.transpose(gValue, self.order_inverse)
+        self.prev.backward(prev_gValue, optimizer)
