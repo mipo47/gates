@@ -122,17 +122,24 @@ class Conv2D(Gate, GateWeights):
         # filters
         self.filter_shape = (out_channels, in_channels, filter_height, filter_width)
 
-        self.w = np.random.randn(*self.filter_shape) / np.sqrt(out_channels * 0.5)
+        # self.w = np.random.randn(*self.filter_shape) / np.sqrt(out_channels * 0.5)
 
         # self.w = np.round((np.random.random(self.filter_shape) - 0.5) * 4)
 
-        # self.w = np.zeros(self.filter_shape)
+        self.w = np.zeros(self.filter_shape)
         # self.w[0, 0, 1, 1] = 1
         # self.w[1, 1, 0, 0] = 1
         # self.w[1, 2, 0, 0] = -1
 
-        # print(np.transpose(self.w, (3,2,0,1)))
-        # print("---------------------------")
+        for i_o, o in enumerate(self.w):
+            for i_i, i in enumerate(o):
+                for i_h, h in enumerate(i):
+                    for i_w, w in enumerate(h):
+                        self.w[i_o, i_i, i_h, i_w] = \
+                            i_o + (i_i + 1) * 0.1 + (i_h + 1) * 0.01 + (i_w + 1) * 0.001
+
+        print(self.w)
+        print("---------------------------")
 
     def forward(self, value):
         input = self.prev.forward(value)
@@ -162,7 +169,7 @@ class Conv2D(Gate, GateWeights):
         dX_col = W_flat.T @ dout_flat
         shape = (batch_size,) + self.in_shape
         prev_gValue = col2im_indices(dX_col, shape, self.filter_size[0],
-                            self.filter_size[1], self.padding, self.stride)
+                                     self.filter_size[1], self.padding, self.stride)
 
         optimizer.update(self.w, self.gW * self.learning_rate)
         self.prev.backward(prev_gValue, optimizer)
