@@ -131,47 +131,61 @@ class Conv2D(Gate, GateWeights):
         # self.w[1, 1, 0, 0] = 1
         # self.w[1, 2, 0, 0] = -1
 
-        # for i_o, o in enumerate(self.w):
-        #     for i_i, i in enumerate(o):
-        #         for i_h, h in enumerate(i):
-        #             for i_w, w in enumerate(h):
-        #                 self.w[i_o, i_i, i_h, i_w] = \
-        #                     i_o + (i_i + 1) * 0.1 + (i_h + 1) * 0.01 + (i_w + 1) * 0.001
+        for i_o, o in enumerate(self.w):
+            for i_i, i in enumerate(o):
+                for i_h, h in enumerate(i):
+                    for i_w, w in enumerate(h):
+                        self.w[i_o, i_i, i_h, i_w] = \
+                            i_o + (i_i + 1) * 0.1 + (i_h + 1) * 0.01 + (i_w + 1) * 0.001
 
         # print(self.w)
         # print("---------------------------")
 
     def forward(self, value):
+        # (10, 3, 4, 5) or (batch, in_c, in_h, in_w)
+
         input = self.prev.forward(value)
         if input.shape[1:] != self.in_shape:
             raise "Invalid input format, needed: (batch, channel , height, width)"
 
-        # (27, 60) or (view, (batch x input_channel))
-        self.X_col = im2col_indices(
+        # (2, 27) or (out_c, in_c * f_h * f_w)
+        w_flat = self.w.reshape(self.out_channels, -1)
+
+        # (27, 60) or (in_c * in_h * in_w, batch * out_h * out_w)
+        self.input_col = im2col_indices(
             input, self.filter_size[0], self.filter_size[1],
             stride=self.stride, padding=self.padding)
 
-        w_flat = self.w.reshape(self.out_channels, -1)
-        out = w_flat @ self.X_col # (output_channel x (batch x out_h, out_w))
+        # (2, 60) or (output_channel, (batch x out_h, out_w))
+        out = w_flat @ self.input_col
+
+        # (2, 10, 2, 3) or (out_c, batch, out_h, out_w)
         out = out.reshape((self.out_channels, -1) + self.output_shape[1:])
 
+        # (10, 2, 2, 3) or (batch, out_c, out_h, out_w)
         self.value = out.transpose(1, 0, 2, 3)
         return self.value
 
     def backward(self, gValue, optimizer):
-        # gValue: (batch, out_c, out_h, out_w)
+        # gValue: (10, 2, 2, 3) or (batch, out_c, out_h, out_w)
         batch_size = gValue.shape[0]
 
-        # (2, 60)
+        # (2, 60) or (out_c, batch * out_h * out_w)
         dout_flat = gValue.transpose(1, 0, 2, 3).reshape(self.out_channels, -1)
 
-        # (2, 27)
-        self.gW = (dout_flat @ self.X_col.T).reshape(self.w.shape)
+        # (2, 3, 3, 3) or (out_c, in_c, f_h, f_w)
+        self.gW = (dout_flat @ self.input_col.T).reshape(self.w.shape)
 
+        # (27, 2) or (in_c * f_h * f_w, out_c)
         w_flat_T = self.w.reshape(self.out_channels, -1).T
 
+        # (27, 60) or (in_c * f_h * f_w, batch * out_h * out_w)
         dX_col = w_flat_T @ dout_flat
+
+        # (10, 3, 4, 5) or (batch, in_c, in_h, in_w)
         shape = (batch_size,) + self.in_shape
+
+        # (10, 3, 4, 5) or (batch, in_c, in_h, in_w)
         prev_gValue = col2im_indices(dX_col, shape, self.filter_size[0],
                                      self.filter_size[1], self.padding, self.stride)
 
