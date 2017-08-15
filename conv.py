@@ -65,27 +65,36 @@ class Conv(Gate, GateWeights):
         ))
         return self.value
 
-    def backward_h(self, h, prev_value, gValue, prev_gValue):
+    def backward_h_w(self, h, w, prev_value, gValue, prev_gValue):
         batch_size = gValue.shape[0]
+
+        # previous layer gradient
+        pixel = gValue[:, h, w, :].reshape((batch_size, 1, 1, 1, -1))
+        out = np.sum(pixel * self.w, axis=4)
+        prev_gValue[
+        :,
+        h: h + self.filter_size[0],
+        w: w + self.filter_size[1],
+        :] += out
+
+        # filters gradient
+        in_view = prev_value[
+                  :,
+                  h: h + self.filter_size[0],
+                  w: w + self.filter_size[1],
+                  :
+                  ].reshape((batch_size,) + self.filter_shape[:-1] + (1,))
+
+        self.gW += np.sum(in_view * pixel, axis=0)
+
+    def backward_h(self, h, prev_value, gValue, prev_gValue):
         for w in range(self.output_shape[1]):
-            # previous layer gradient
-            pixel = gValue[:, h, w, :].reshape((batch_size, 1, 1, 1, -1))
-            out = np.sum(pixel * self.w, axis=4)
-            prev_gValue[
-            :,
-            h: h + self.filter_size[0],
-            w: w + self.filter_size[1],
-            :] += out
+            self.backward_h_w(h, w, prev_value, gValue, prev_gValue)
 
-            # filters gradient
-            in_view = prev_value[
-                      :,
-                      h: h + self.filter_size[0],
-                      w: w + self.filter_size[1],
-                      :
-                      ].reshape((batch_size,) + self.filter_shape[:-1] + (1,))
-
-            self.gW += np.sum(in_view * pixel, axis=0)
+        # works slower for most cases
+        # Parallel.For(0, self.output_shape[1], Action[Int32](
+        #     lambda w: self.backward_h_w(h, w, prev_value, gValue, prev_gValue)
+        # ))
 
     def backward(self, gValue, optimizer):
         batch_size = gValue.shape[0]
