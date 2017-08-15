@@ -1,6 +1,9 @@
 import numpy as np
 from gates.gate import *
 from gates.im2col import *
+import clr
+from System import Int32, Action
+from System.Threading.Tasks import Parallel
 
 
 class Conv(Gate, GateWeights):
@@ -35,57 +38,66 @@ class Conv(Gate, GateWeights):
                         self.w[i_h, i_w, i_i, i_o] = \
                             i_o + (i_i + 1) * 0.1 + (i_h + 1) * 0.01 + (i_w + 1) * 0.001
 
+    def forward_h(self, h, input):
+        for w in range(self.output_shape[1]):
+            in_view = input[
+                      :,
+                      h: h + self.filter_size[0],
+                      w: w + self.filter_size[1],
+                      :
+                      ].reshape((-1,) + self.filter_shape[:-1] + (1,))
+
+            matrix = in_view * self.w
+            # sum by h, w, in_c
+            out = np.sum(matrix, axis=(1, 2, 3))
+            self.value[:, h, w, :] += out
+
     def forward(self, value):
-        bchw = self.prev.forward(value)
-        if bchw.shape[1:] != self.in_shape:
+        prev_value = self.prev.forward(value)
+        if prev_value.shape[1:] != self.in_shape:
             raise "Invalid input format, needed: (batch, channel , height, width)"
 
-        batch_size = bchw.shape[0]
+        batch_size = prev_value.shape[0]
         self.value = np.zeros((batch_size,) + self.output_shape)
 
-        for h in range(self.output_shape[0]):
-            for w in range(self.output_shape[1]):
-                in_view = bchw[
-                          :,
-                          h: h + self.filter_size[0],
-                          w: w + self.filter_size[1],
-                          :
-                          ].reshape((batch_size,) + self.filter_shape[:-1] + (1,))
-
-                matrix = in_view * self.w
-                # sum by h, w, in_c
-                out = np.sum(matrix, axis=(1, 2, 3))
-                self.value[:, h, w, :] += out
-
+        Parallel.For(0, self.output_shape[0], Action[Int32](
+            lambda h: self.forward_h(h, prev_value)
+        ))
         return self.value
+
+    def backward_h(self, h, prev_value, gValue, prev_gValue):
+        batch_size = gValue.shape[0]
+        for w in range(self.output_shape[1]):
+            # previous layer gradient
+            pixel = gValue[:, h, w, :].reshape((batch_size, 1, 1, 1, -1))
+            out = np.sum(pixel * self.w, axis=4)
+            prev_gValue[
+            :,
+            h: h + self.filter_size[0],
+            w: w + self.filter_size[1],
+            :] += out
+
+            # filters gradient
+            in_view = prev_value[
+                      :,
+                      h: h + self.filter_size[0],
+                      w: w + self.filter_size[1],
+                      :
+                      ].reshape((batch_size,) + self.filter_shape[:-1] + (1,))
+
+            self.gW += np.sum(in_view * pixel, axis=0)
 
     def backward(self, gValue, optimizer):
         batch_size = gValue.shape[0]
         prev_gValue = np.zeros((batch_size,) + self.in_shape)
-
-        bchw = self.prev.value
         self.gW = np.zeros_like(self.w)
 
-        for h in range(self.output_shape[0]):
-            for w in range(self.output_shape[1]):
-                # previous layer gradient
-                pixel = gValue[:, h, w, :].reshape((batch_size, 1, 1, 1, -1))
-                out = np.sum(pixel * self.w, axis=4)
-                prev_gValue[
-                :,
-                h: h + self.filter_size[0],
-                w: w + self.filter_size[1],
-                :] += out
+        # for h in range(self.output_shape[0]):
+        #     self.backward_h(h, self.prev.value, gValue, prev_gValue)
 
-                # filters gradient
-                in_view = bchw[
-                          :,
-                          h: h + self.filter_size[0],
-                          w: w + self.filter_size[1],
-                          :
-                          ].reshape((batch_size,) + self.filter_shape[:-1] + (1,))
-
-                self.gW += np.sum(in_view * pixel, axis=0)
+        Parallel.For(0, self.output_shape[0], Action[Int32](
+            lambda h: self.backward_h(h, self.prev.value, gValue, prev_gValue)
+        ))
 
         optimizer.update(self.w, self.gW * self.learning_rate)
         self.prev.backward(prev_gValue, optimizer)
