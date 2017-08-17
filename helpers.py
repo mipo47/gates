@@ -15,7 +15,7 @@ def generate_data(count=100, input_count=2, output_count=2, bias=True):
     return x, y
 
 
-def print_weights(layer):
+def print_weights(layer, recursive = True):
     all_w = []
 
     while layer:
@@ -23,6 +23,7 @@ def print_weights(layer):
             print("w = ", layer.w)
             all_w = np.concatenate((all_w, layer.w.reshape(-1)))
         layer = layer.prev
+        if not recursive: break
 
     print('L2 reg w = ', np.mean(all_w ** 2)) #, np.min(all_w), np.max(all_w))
 
