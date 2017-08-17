@@ -38,9 +38,10 @@ def numpy2net(np_array):
 
 class FromDotNet(Gate):
     # prev is GateNet
-    def __init__(self, prev):
+    def __init__(self, prev, net_optimiser = None):
         super().__init__(size=prev.Size)
         self.prev = prev
+        self.net_optimizer = net_optimiser
 
     def forward(self, value):
         net_input = numpy2net(value)
@@ -53,4 +54,4 @@ class FromDotNet(Gate):
     def backward(self, gValue, optimizer):
         net_input = numpy2net(gValue)
         gpu_input = GArray(net_input)
-        self.prev.Backward(gpu_input, None)
+        self.prev.Backward(gpu_input, self.net_optimizer)
