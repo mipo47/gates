@@ -3,11 +3,13 @@ from gates.gate import *
 
 
 def generate_data(count=100, input_count=2, output_count=2, bias=True):
-    x = np.random.rand(count, input_count)
-    y = np.zeros((count, output_count))
+    x = (np.random.rand(count, input_count) - 0.5) * 2.0 # -1 to 1
+    x = x.astype(dtype=np.float32)
+    y = np.zeros((count, output_count), dtype=np.float32)
+
     y[:, 0] = -1 * x[:, 0] + 2 * x[:, 1] + (3 if bias else 0)
     if output_count >= 2:
-        y[:, 1] = x[:, 0] - 4 * x[:, 1] + (-2 if bias else 0)
+        y[:, 1] = 1 * x[:, 0] - 4 * x[:, 1] + (-2 if bias else 0)
     if output_count >= 3:
         y[:, 2] = 4 * x[:, 0] - 2 * x[:, 1]
     if output_count >= 4:
