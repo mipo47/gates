@@ -1,7 +1,7 @@
 import sys
 import clr
 # same path is set as working directory
-sys.path.append(r"G:\Projects\ML\gate-net\GatesNet\GatesNet\bin\Debug")
+sys.path.append(r"G:\Projects\ML\gate-net\GatesNet\GatesNet\bin\x64\Debug")
 clr.AddReference("GatesNet")
 
 from System import Int32, Array, Single
