@@ -5,7 +5,7 @@ from gates.gate import *
 class Bias(Gate, GateWeights):
     def __init__(self, prev):
         super().__init__(prev)
-        self.w = np.zeros(prev.size)
+        self.w = np.zeros(prev.size, dtype=Gate.TYPE)
 
     def forward(self, value):
         prev_value = self.prev.forward(value)
@@ -13,6 +13,6 @@ class Bias(Gate, GateWeights):
         return self.value
 
     def backward(self, gValue, optimizer):
-        self.gW = np.sum(gValue, axis=0)
+        self.gW = np.sum(gValue, axis=0, dtype=Gate.TYPE)
         optimizer.update(self.w, self.gW)
         self.prev.backward(gValue, optimizer)

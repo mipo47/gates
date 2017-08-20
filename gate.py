@@ -1,4 +1,8 @@
+import numpy as np
+
 class Gate:
+    TYPE = np.float32
+
     def __init__(self, prev = None, size = None, value = None):
         self.prev = prev
         self.value = value

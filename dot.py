@@ -40,7 +40,7 @@ class Dot2(Gate, GateWeights):
         if isinstance(w, tuple):
             w = (2 * np.random.random(w) - 1) / np.sqrt(w[0])
 
-        self.w = w
+        self.w = w.astype(Gate.TYPE)
         self.size = w.shape[1]
 
     def forward(self, value):

@@ -3,9 +3,9 @@ from gates.gate import *
 
 
 def generate_data(count=100, input_count=2, output_count=2, bias=True):
-    x = (np.random.rand(count, input_count) - 0.5) * 2.0 # -1 to 1
-    x = x.astype(dtype=np.float32)
-    y = np.zeros((count, output_count), dtype=np.float32)
+    x = (np.random.rand(count, input_count) - 0.5) * 2.0 * 10.0 # -10 to 10
+    x = x.astype(dtype=Gate.TYPE)
+    y = np.zeros((count, output_count), dtype=Gate.TYPE)
 
     y[:, 0] = -1 * x[:, 0] + 2 * x[:, 1] + (3 if bias else 0)
     if output_count >= 2:
@@ -39,7 +39,7 @@ def checkGradient(gateWeights, loss, X, optimizer):
     dValue = np.ones_like(oldLoss)
     loss.backward(dValue, optimizer)
 
-    d = 0.00001
+    d = 0.001
     i = np.random.randint(temp_w.shape[0])
     if temp_w.ndim == 1:
         grad = gateWeights.gW[i]
@@ -63,7 +63,7 @@ def checkGradient(gateWeights, loss, X, optimizer):
     # realGrad = np.sum(realGrad, axis=0)
 
     diff = np.abs(realGrad - grad) / np.max(np.abs([realGrad, grad, 1e-7]))
-    status = "OK" if diff < 0.0025 else "Bad " + str(diff) + "\n  "
+    status = "OK" if diff < 0.05 else "Bad " + str(diff) + "\n  "
     print(status, "gradient real/expected", realGrad, grad)
 
     # print('g weights', gateWeights.gW)
