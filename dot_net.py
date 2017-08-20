@@ -55,3 +55,22 @@ class FromDotNet(Gate):
         net_input = numpy2net(gValue)
         gpu_input = GArray(net_input)
         self.prev.Backward(gpu_input, self.net_optimizer)
+
+
+class ToDotNet(Gate):
+    # prev is GateNet
+    def __init__(self, prev, net_optimiser = None):
+        super().__init__(size=prev.size)
+        self.prev = prev
+        self.net_optimizer = net_optimiser
+
+    def forward(self, value):
+        np_input = net2numpy(value.Data)
+        np_output = self.prev.Forward(np_input)
+        net_output = numpy2net(np_output)
+        self.value = GArray(net_output)
+        return self.value
+
+    def backward(self, gValue, optimizer):
+        np_input = net2numpy(gValue.Data)
+        self.prev.Backward(np_input, self.net_optimizer)
