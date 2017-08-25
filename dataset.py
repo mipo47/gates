@@ -12,6 +12,10 @@ class DataSet:
         self.inputs.append(input)
         self.outputs.append(output)
 
+    def extend(self, inputs, outputs):
+        self.inputs.extend(inputs)
+        self.outputs.extend(outputs)
+
     def length(self):
         return len(self.inputs)
 
@@ -26,9 +30,12 @@ class DataSet:
         self.outputs = np.array(self.outputs, copy=False, dtype=DATASET_TYPE)
 
     def get_batch(self, max_size):
+        inp = self.inputs if isinstance(self.inputs, np.ndarray) else np.array(self.inputs, copy=False)
+        out = self.outputs if isinstance(self.outputs, np.ndarray) else np.array(self.outputs, copy=False)
+
         length = self.length()
         if length <= max_size:
-            return self.inputs, self.outputs
+            return inp, out
 
         indices = np.random.choice(length, max_size)
-        return self.inputs[indices,], self.outputs[indices,]
+        return inp[indices,], out[indices,]
