@@ -38,7 +38,8 @@ class Dot2(Gate, GateWeights):
             w = (prev.size, w)
 
         if isinstance(w, tuple):
-            w = (2 * np.random.random(w) - 1) / np.sqrt(w[0])
+            range = np.sqrt(6 / (w[0] + w[1]))
+            w = np.random.uniform(-range, range, w)
 
         self.w = w.astype(Gate.TYPE)
         self.size = w.shape[1]
