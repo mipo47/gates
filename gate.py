@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Gate:
     TYPE = np.float32
 
