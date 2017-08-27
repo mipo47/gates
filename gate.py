@@ -28,6 +28,11 @@ class Gate:
             self.prev.backward(gValue, optimizer)
 
 
+class PlaceHolder(Gate):
+    def __init__(self, size):
+        super().__init__(size=size)
+
+
 class GateWeights:
     def __init__(self):
         self.w = None
