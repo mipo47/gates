@@ -56,13 +56,13 @@ class Adam:
     def update(self, w, gW):
         w_id = id(w)
         m1 = self.m1[w_id] if w_id in self.m1 else gW
-        m2 = self.m2[w_id] if w_id in self.m1 else gW**2
+        m2 = self.m2[w_id] if w_id in self.m2 else gW**2
 
         self.m1[w_id] = m1 = self.b1 * m1 + (1.0 - self.b1) * gW
         self.m2[w_id] = m2 = self.b2 * m2 + (1.0 - self.b2) * (gW**2)
 
         # bias correction
-        m1 /= 1.0 - self.b1
-        m2 /= 1.0 - self.b1
+        m1 = m1 / (1.0 - self.b1)
+        m2 = m2 / (1.0 - self.b2)
 
         w -= self.learning_rate * m1 / (np.sqrt(m2) + self.e)
