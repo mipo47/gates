@@ -23,3 +23,11 @@ class Checkpoint:
                 gate.w = self.weights[i]
                 i += 1
             gate = gate.prev
+
+    def copy_to(self, dest):
+        gate = self.net
+        while gate is not None:
+            if isinstance(gate, GateWeights):
+               dest.w = np.copy(gate.w)
+            gate = gate.prev
+            dest = dest.prev
