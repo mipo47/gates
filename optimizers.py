@@ -50,8 +50,7 @@ class Adam:
         self.learning_rate = learning_rate
         self.b1, self.b2, self.e = b1, b2, e
 
-        self.m1 = dict()
-        self.m2 = dict()
+        self.reset()
 
     def update(self, w, gW):
         w_id = id(w)
@@ -66,3 +65,7 @@ class Adam:
         m2 = m2 / (1.0 - self.b2)
 
         w -= self.learning_rate * m1 / (np.sqrt(m2) + self.e)
+
+    def reset(self):
+        self.m1 = dict()
+        self.m2 = dict()
