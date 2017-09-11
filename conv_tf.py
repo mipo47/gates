@@ -4,7 +4,9 @@ from gates.gate import *
 
 
 class TF:
-    sess = tf.Session()
+    sess = tf.Session(
+        config=tf.ConfigProto(device_count = {'GPU': 0})
+    )
 
     init = lambda: TF.sess.run(tf.global_variables_initializer())
 
@@ -15,7 +17,8 @@ class Conv_tf(Gate, GateWeights):
                  filter_size=(3, 3),
                  learning_rate=0.001,
                  padding=0,
-                 stride=1):
+                 stride=1,
+                 data_format="NHWC"): # "NCHW"
         super().__init__(prev)
         self.in_shape = in_shape
         self.out_channels = out_channels
@@ -25,14 +28,14 @@ class Conv_tf(Gate, GateWeights):
         self.padding = padding
         self.stride = stride
 
-        out_h = int((in_shape[1] - filter_size[0] + 2 * padding) / stride + 1)
-        out_w = int((in_shape[2] - filter_size[1] + 2 * padding) / stride + 1)
-        self.output_shape = (out_channels, out_h, out_w)
+        out_h = int((in_shape[0] - filter_size[0] + 2 * padding) / stride + 1)
+        out_w = int((in_shape[1] - filter_size[1] + 2 * padding) / stride + 1)
+        self.output_shape = (out_h, out_w, out_channels)
 
         self.size = self.output_shape[0] * self.output_shape[1] * self.output_shape[2]
 
         filter_height, filter_width = filter_size
-        in_channels = in_shape[0]
+        in_channels = in_shape[2]
 
         # filters
         self.filter_shape = (out_channels, in_channels, filter_height, filter_width)
@@ -49,17 +52,17 @@ class Conv_tf(Gate, GateWeights):
 
         # [filter_height, filter_width, in_channels, out_channels]
         self.filter = tf.Variable(self.w.transpose(2, 3, 1, 0), dtype=tf.float32)
-        self.conv = tf.nn.conv2d(self.x, self.filter, [1, stride, stride, 1], "VALID", data_format="NCHW")
+        self.conv = tf.nn.conv2d(self.x, self.filter, [1, stride, stride, 1], "VALID", data_format=data_format)
 
         self.gY = tf.placeholder(tf.float32, (None,) + self.output_shape, "out_gradient")
 
         self.input_sizes = tf.placeholder(tf.int32, [4])
         self.conv_back_input = tf.nn.conv2d_backprop_input(
-            self.input_sizes, self.filter, self.gY, [1, stride, stride, 1], "VALID", data_format="NCHW")
+            self.input_sizes, self.filter, self.gY, [1, stride, stride, 1], "VALID", data_format=data_format)
 
         self.filter_sizes = tf.constant([filter_height, filter_width, in_channels, out_channels], dtype=tf.int32)
         self.conv_back_filter = tf.nn.conv2d_backprop_filter(
-            self.x, self.filter_sizes, self.gY, [1, stride, stride, 1], "VALID", data_format="NCHW")
+            self.x, self.filter_sizes, self.gY, [1, stride, stride, 1], "VALID", data_format=data_format)
 
         TF.init()
 
@@ -85,7 +88,7 @@ class Conv_tf(Gate, GateWeights):
             self.x: self.prev.value,
             self.gY: gValue
         })
-        self.gW = self.gW.transpose(3, 2, 0, 1)
+        self.gW = self.gW.transpose(3, 0, 1, 2)
 
         # optimizer.update(self.w, self.gW * self.learning_rate)
         self.prev.backward(prev_gValue, optimizer)
