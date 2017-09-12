@@ -17,12 +17,13 @@ def generate_data(count=100, input_count=2, output_count=2, bias=True):
     return x, y
 
 
-def print_weights(layer, recursive = True):
+def print_weights(layer, recursive = True, show_weights = True):
     all_w = []
 
     while layer:
         if isinstance(layer, GateWeights):
-            print("w = ", layer.w)
+            if show_weights:
+                print("w = ", layer.w)
             all_w = np.concatenate((all_w, layer.w.reshape(-1)))
 
         if not recursive: break
