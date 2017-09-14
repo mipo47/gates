@@ -51,9 +51,6 @@ class Softmax(Gate):
         self.value = prob_scores / np.sum(prob_scores, axis=1, keepdims=True)
         return self.value
 
-    def backward(self, gValue, optimizer):
-        raise "Not implemented"
-
 
 # https://kratzert.github.io/2016/02/12/understanding-the-gradient-flow-through-the-batch-normalization-layer.html
 class BatchNorm(Gate, GateWeights):
