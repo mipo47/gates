@@ -60,8 +60,6 @@ class BatchNorm(Gate, GateWeights):
         self.w = np.array([1.0, 0.0], dtype=np.float32)
         self.eps = 1e-8
 
-        self.cache = None
-
     def forward(self, value):
         x = self.prev.forward(value)
 
