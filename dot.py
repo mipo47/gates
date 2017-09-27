@@ -1,5 +1,5 @@
-import numpy as np
 from gates.gate import *
+from gates.initializations import *
 
 
 class Dot(Gate):
@@ -31,15 +31,14 @@ class Dot(Gate):
 
 
 class Dot2(Gate, GateWeights):
-    def __init__(self, prev, w):
+    def __init__(self, prev, w, initialization=DEFAULT_DOT_INITIALIZATION):
         super().__init__(prev)
 
         if isinstance(w, int):
             w = (prev.size, w)
 
         if isinstance(w, tuple):
-            range = np.sqrt(6 / (w[0] + w[1]))
-            w = np.random.uniform(-range, range, w)
+            w = initialization(w)
 
         self.w = w.astype(Gate.TYPE)
         self.size = w.shape[1]
