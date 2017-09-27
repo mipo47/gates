@@ -6,6 +6,11 @@ def init_zero(shape):
     return np.zeros(shape, dtype=Gate.TYPE)
 
 
+def xavier0(shape):
+    std = 1.0 / np.sqrt(6.0 * (shape[0] + shape[1]))
+    return (np.random.randn(shape[0], shape[1]) * std).astype(Gate.TYPE)
+
+
 def xavier1(shape):
     range = np.sqrt(6 / (shape[0] + shape[1]))
     return np.random.uniform(-range, range, shape).astype(Gate.TYPE)
@@ -20,5 +25,5 @@ def xavier3(shape):
     return (np.random.randn(shape[0], shape[1]) / np.sqrt(shape[0])).astype(Gate.TYPE)
 
 
-DEFAULT_DOT_INITIALIZATION = xavier3
+DEFAULT_DOT_INITIALIZATION = xavier0
 DEFAULT_BIAS_INITIALIZATION = init_zero
