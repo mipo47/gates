@@ -6,6 +6,12 @@ def init_zero(shape):
     return np.zeros(shape, dtype=Gate.TYPE)
 
 
+def init_const(shape):
+    std = 2.0 / shape[0]
+    w = np.where(np.random.random(shape) > 0.5, std, -std)
+    return w.astype(Gate.TYPE)
+
+
 def xavier0(shape):
     std = 1.0 / np.sqrt(6.0 * (shape[0] + shape[1]))
     return (np.random.randn(shape[0], shape[1]) * std).astype(Gate.TYPE)
