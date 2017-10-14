@@ -37,7 +37,7 @@ def train_model(data_info,
 
         # hidden layers
         for layer_size in data_info.layers:
-            net = l = Layer(net, layer_size, activation)
+            net = Layer(net, layer_size, activation)
             if 'dropout' in data_info:
                 net = Dropout(net, data_info.dropout)
             if 'dropout2' in data_info:
