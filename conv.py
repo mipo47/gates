@@ -1,9 +1,6 @@
 import numpy as np
 from gates.gate import *
 from gates.im2col import *
-import clr
-from System import Int32, Action
-from System.Threading.Tasks import Parallel
 
 
 class Conv(Gate, GateWeights):
